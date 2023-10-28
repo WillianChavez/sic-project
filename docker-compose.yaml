@@ -1,0 +1,50 @@
+version: '3.1'
+
+services:
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: ./.docker/Dockerfile
+    networks:
+      - sic-net
+    volumes:
+      - .:/app
+    ports:
+      - '8000:8000'
+    command: python manage.py runserver app:8000
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: mysql
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'sic'
+      MYSQ_ROOT_USER: 'root'
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_USER: 'root'
+    ports:
+      - '3307:3306'
+    volumes:
+      - ./.docker/mysql:/var/lib/mysql
+    networks:
+      - sic-net
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - '8080:80'
+    networks:
+      - sic-net
+    depends_on:
+      - mysql
+
+networks:
+  sic-net:
+    driver: bridge

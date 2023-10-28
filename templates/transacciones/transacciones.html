@@ -1,0 +1,283 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transacciones</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'styles/transacciones.css' %}">
+</head>
+<body>
+    <div style="display: block">
+        <div class="sidebar">
+            <div class="py-4 text-center logo">
+                <a href="/"><img src="{% static 'img/home.png' %}" alt="home"></a>
+            </div>
+            <a href="/catalogo_cuentas" class="aclass">Catálogo de Cuentas</a>
+            <a href="/transacciones" class="aclass">Transacciones</a>
+            <a href="/control_costos" class="aclass">Control de Costos</a>
+            <a href="/estados_financieros" class="aclass">Estados Financieros</a>
+            <a href="logout" class="logout-link">Cerrar sesión</a>
+        </div>
+
+        <div class="content text-center" name="transaccion">
+            <h2>Transacciones</h2>
+
+            <!-- Formulario de búsqueda y filtro por período -->
+            <form method="post" action="{% url 'filtrar_transacciones' %}">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="periodo-select" class="font-weight-bold">Seleccionar Período  </label>
+                <select class="form-control custom-select" id="periodo-select" name="periodo-select">
+                    <option value="todos">Ninguno</option>
+                    {% for periodo in periodos %}
+                        <option value="{{ periodo.codigo }}">{{ periodo.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mb-2 mr-5">Buscar Periodo</button>
+            
+          </form>
+
+            <!-- Botones y tabla de transacciones -->
+            <div class="buttons-container">
+              <button class="btn btn-secondary mr-5" data-toggle="modal" data-target="#nuevoPeriodoModal">Nuevo período</button>
+              <button class="btn btn-primary " data-toggle="modal" data-target="#agregarTransaccion">Agregar Transacción</button>
+              <div class="btn-group">
+                  <a href="/actualizar_resumen_cuentas" class="btn btn-dark" data-toggle="modal" data-target="#totalizar">Totalizar</a>
+              </div>
+              <div class="btn-group">
+                <a href="libro_mayor" class="btn btn-dark">Ver Libro Mayor</a>
+            </div>
+          </div>
+
+            <!-- Tabla de transacciones -->
+            <table class="table table-striped table-dark table-bordered mt-2">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th>Debe</th>
+                        <th>Haber</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Aquí puedes iterar sobre las transacciones y mostrarlas en filas -->
+                    {% for transaccion in transacciones %}
+                        <tr>
+                            <td>{{ transaccion.codigo }}</td>
+                            <td>{{ transaccion.fecha }}</td>
+                            <td>{{ transaccion.descripcion }}</td>
+                            <td>${{ transaccion.movimiento_debe }}</td>
+                            <td>${{ transaccion.movimiento_haber }}</td>
+                            <td>
+                              <a href="{% url 'modificar_transaccion' transaccion.id %}" class="btn btn-info btn-sm" data-toggle="modal" data-target="#modificarTransaccion{{ transaccion.id }}">Modificar</a>
+
+                                <a href="{% url 'eliminar_transaccion' transaccion.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+                            </td>
+                        </tr>
+                        <div class="modal fade" id="modificarTransaccion{{ transaccion.id }}" tabindex="-1" role="dialog" aria-labelledby="modificarTransaccion{{ transaccion.id }}" aria-hidden="true">
+                          <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="modificarTransaccion{{ transaccion.id }}">Modificar Transacción</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                  <span aria-hidden="true">&times;</span>
+                                </button>
+                              </div>
+                              <div class="modal-body">
+                                <!-- Formulario para editar transacciones -->
+                                <form method="post" action="{% url 'modificar_transaccion' transaccion.id %}">
+                                  {% csrf_token %}
+                                  <div class="form-group">
+                                    <label for="codigo">Código:</label>
+                                    <select class="form-control" id="codigo" name="codigo" required>
+                                      {% for cuenta in cuentas %}
+                                      <option value="{{ cuenta.codigo }}" {% if cuenta.codigo == transaccion.codigo.codigo %}selected{% endif %}>
+                                        {{ cuenta.codigo }} - {{ cuenta.nombre}}
+                                      </option>
+                                      {% endfor %}
+                                    </select>
+                                  </div>
+                                  <div class="form-group">
+                                    <label for="fecha">Fecha:</label>
+                                    <input type="date" class="form-control" id="fecha" name="fecha" value="{{ transaccion.fecha }}" required />
+                                  </div>
+                                  <div class="form-group">
+                                    <label for="descripcion">Descripción:</label>
+                                    <input type="text" class="form-control" id="descripcion" name="descripcion" value="{{ transaccion.descripcion }}" required />
+                                  </div>
+                                  <div class="form-group">
+                                    <label for="movimiento_debe2">Movimiento (Debe):</label>
+                                    <input type="text" class="form-control" id="movimiento_debe" name="movimiento_debe" value="{{ transaccion.movimiento_debe }}"/>
+                                  </div>
+                                  <div class="form-group">
+                                    <label for="movimiento_haber2">Movimiento (Haber):</label>
+                                    <input type="text" class="form-control" id="movimiento_haber" name="movimiento_haber" value="{{ transaccion.movimiento_haber }}" />
+                                  </div>
+                                  <div class="form-group">
+                                    <label for="periodo">Período:</label>
+                                    <select class="form-control" id="periodo" name="periodo" required>
+                                        {% for periodo in periodos %}
+                                            <option value="{{ periodo.codigo }}" {% if periodo.codigo == transaccion.codigo.codigo %}selected{% endif %}>{{ periodo.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                  <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary" id="editarTransaccion{{ transaccion.id }}">Guardar</button>
+                                  </div>
+                                </form>
+                              </div>
+                            </div>
+                          </div>
+                        </div> 
+                    {% endfor %}
+                    <tr>
+                        <td colspan="3">Total</td>
+                        <td>${{ suma_debe }}</td>
+                        <td>${{ suma_haber }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal fade" id="totalizar" tabindex="-1" role="dialog" aria-labelledby="totalizar" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="totalizar">Totalizar</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <form method="post" action="{% url 'actualizar_resumen_cuentas' %}">
+                      {% csrf_token %}
+                      <div class="form-group">
+                        <label for="periodo">Período:</label>
+                        <select class="form-control" id="periodo" name="periodo" required>
+                            {% for periodo in periodos %}
+                                <option value="{{ periodo.codigo }}">{{ periodo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Totalizar</button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
+    <!-- Modales y JavaScript -->
+    <div class="modal fade" id="nuevoPeriodoModal" tabindex="-1" role="dialog" aria-labelledby="nuevoPeriodoModal" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="nuevoPeriodoModal">Nuevo período</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="{% url 'crear_periodo' %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="nombre">Nombre del período:</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre_periodo" required />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="agregarTransaccion" tabindex="-1" role="dialog" aria-labelledby="agregarTransaccion" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="agregarTransaccion">
+                        Agregar Transaccion
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="{% url 'agregar_transaccion' %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="codigo">Código:</label>
+                            <select class="form-control" id="codigo" name="codigo" required>
+                                {% for cuenta in cuentas %}
+                                    <option value="{{ cuenta.codigo }}">
+                                        {{ cuenta.codigo }} - {{ cuenta.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fecha">Fecha:</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="descripcion">Descripción:</label>
+                            <input type="text" class="form-control" id="descripcion" name="descripcion" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="movimiento_debe2">Movimiento (Debe):</label>
+                            <input type="text" class="form-control" id="movimiento_debe2" name="movimiento_debe" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="movimiento_haber2">Movimiento (Haber):</label>
+                            <input type="text" class="form-control" id="movimiento_haber2" name="movimiento_haber" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="periodo">Período:</label>
+                            <select class="form-control" id="periodo" name="periodo" required>
+                                {% for periodo in periodos %}
+                                    <option value="{{ periodo.codigo }}">{{ periodo.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="agregarTransaccion">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#movimiento_debe2").on("input", function () {
+                if ($(this).val() !== "") {
+                    $("#movimiento_haber2").prop("disabled", true);
+                } else {
+                    $("#movimiento_haber2").prop("disabled", false);
+                }
+            });
+
+            $("#movimiento_haber2").on("input", function () {
+                if ($(this).val() !== "") {
+                    $("#movimiento_debe2").prop("disabled", true);
+                } else {
+                    $("#movimiento_debe2").prop("disabled", false);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

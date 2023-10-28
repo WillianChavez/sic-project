@@ -1,0 +1,199 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mano de Obra Directa</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'styles/manoobra.css' %}">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="py-4 text-center logo">
+      <a href="/"><img src="{% static 'img/home.png' %}" alt="home"></a>
+    </div>
+    <a href="/" class="aclass">Regresar</a>
+    <a href="logout" class="logout-link">Cerrar sesión</a>
+  </div>
+
+  <div class="content d-flex justify-content-center align-items-center flex-column">
+    <h2 style="margin-bottom: 15px;">Mano de Obra Directa</h2>
+
+    <!-- Botón grande para abrir el modal -->
+    <!-- Botones en línea -->
+  <div class="d-flex justify-content-between align-items-center">
+    <button type="button" class="btn btn-primary btn-lg mr-1" data-toggle="modal" data-target="#registroModal">
+      Registrar Empleado
+    </button>
+    <button type="button" class="btn btn-secondary btn-lg ml-1" data-toggle="modal" data-target="#periodoModal">
+      Añadir a partida doble
+    </button>
+  </div>
+  <!-- Modal para ingresar el periodo -->
+  <div class="modal fade" id="periodoModal" tabindex="-1" role="dialog" aria-labelledby="periodoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="periodoModalLabel">Seleccionar Período</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Formulario para ingresar el período -->
+          <form method="POST" action="{% url 'agregar_a_partida_doble' %}">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="periodo">Período:</label>
+              <select class="form-control" id="periodo" name="periodo" required>
+                {% for periodo in periodos %}
+                    <option value="{{ periodo.codigo }}">{{ periodo.nombre }}</option>
+                {% endfor %}
+            </select>
+            <div class="form-group">
+              <label for="fecha">Fecha:</label>
+              <input type="date" class="form-control" id="fecha" name="fecha"  required />
+            </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+              <button type="submit" class="btn btn-primary">Añadir a partida doble</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+    <!-- Contenedor para hacer la tabla responsive -->
+    <div class="table-responsive">
+        <table class="table table-striped table-dark table-bordered mt-2">
+          <thead>
+            <tr>
+              <th>Nombre de empleado</th>
+              <th>Puesto de trabajo</th>
+              <th>Pago diario</th>
+              <th>Séptimo día</th>
+              <th>Vacaciones</th>
+              <th>Salario cancelado</th>
+              <th>Aguinaldo</th>
+              <th>ISS</th>
+              <th>AFP</th>
+              <th>INSAFORP</th>
+              <th>Costo Real</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for registro in registros %}
+            <tr>
+              <td>{{ registro.nombre_empleado }}</td>
+              <td>{{ registro.puesto_trabajo }}</td>
+              <td>${{ registro.pago_diario }}</td>
+              <td>${{ registro.septimo_dia }}</td>
+              <td>${{ registro.vacaciones }}</td>
+              <td>${{ registro.salario_cancelado }}</td>
+              <td>${{ registro.aguinaldo }}</td>
+              <td>${{ registro.iss }}</td>
+              <td>${{ registro.afp }}</td>
+              <td>${{ registro.insaforp }}</td>
+              <td>${{ registro.costo_real }}</td>
+              <td>
+                <a href="#" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modificarEmpleadoModal{{ registro.pk }}">Modificar</a>
+                <a href="{% url 'eliminar_empleado' registro.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
+              </td>
+            </tr>
+            <!-- Modal para la edición de empleado -->
+            <div class="modal fade" id="modificarEmpleadoModal{{ registro.pk }}" tabindex="-1" role="dialog" aria-labelledby="modificarEmpleadoModalLabel{{ registro.pk }}" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="modificarEmpleadoModalLabel{{ registro.pk }}">Modificar Empleado</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                  </div>
+                  <div class="modal-body">
+                    <!-- Formulario para editar datos del empleado -->
+                    <form method="POST" action="{% url 'modificar_empleado' registro.pk %}">
+                      {% csrf_token %}
+                      <div class="form-group">
+                        <label for="nombre">Nombre de empleado</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre" required value="{{ registro.nombre_empleado }}">
+                      </div>
+                      <div class="form-group">
+                        <label for="puesto">Puesto de trabajo</label>
+                        <input type="text" class="form-control" id="puesto" name="puesto" placeholder="Puesto" required value="{{ registro.puesto_trabajo }}">
+                      </div>
+                      <div class="form-group">
+                        <label for="salario">Salario</label>
+                        <input type="number" class="form-control" id="salario" name="salario" placeholder="Salario" required value="{{ registro.salario }}">
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary" id="guardarEmpleado">Guardar</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+            <!-- Puedes agregar más filas de datos aquí -->
+          </tbody>
+          <tr style="background-color: rebeccapurple;">
+            <td colspan="2">Total</td>
+            <td>${{ suma_pago_diario }}</td>
+            <td>${{ suma_septimo_dia }}</td>
+            <td>${{ suma_vacaciones }}</td>
+            <td>${{ suma_salario_cancelado }}</td>
+            <td>${{ suma_aguinaldo }}</td>
+            <td>${{ suma_iss }}</td>
+            <td>${{ suma_afp }}</td>
+            <td>${{ suma_insaforp }}</td>
+            <td>${{ suma_costo_real }}</td>
+          </tr>
+        </table>
+    </div>
+  </div>
+
+  <!-- Modal para el registro de empleado -->
+  <div class="modal fade" id="registroModal" tabindex="-1" role="dialog" aria-labelledby="registroModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="registroModalLabel">Registrar Empleado</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Formulario para capturar datos del empleado -->
+          <form method="POST" action="{% url 'agregar_empleado' %}">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="nombre">Nombre de empleado</label>
+              <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre" required>
+            </div>
+            <div class="form-group">
+              <label for="puesto">Puesto de trabajo</label>
+              <input type="text" class="form-control" id="puesto" name="puesto" placeholder="Puesto" required>
+            </div>
+            <div class="form-group">
+              <label for="salario">Salario</label>
+              <input type="number" class="form-control" id="salario" name="salario" placeholder="Salario" required>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+              <button type="submit" class="btn btn-primary" id="guardarEmpleado">Guardar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

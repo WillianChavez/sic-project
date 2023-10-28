@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estados Financieros</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'styles/estados.css' %}">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="py-4 text-center logo">
+      <a href="/"><img src="{% static 'img/home.png' %}" alt="home"></a>
+    </div>
+    <a href="/catalogo_cuentas" class="aclass">Catálogo de Cuentas</a>
+    <a href="/transacciones" class="aclass">Transacciones</a>
+    <a href="/control_costos" class="aclass">Control de Costos</a>
+    <a href="/estados_financieros" class="aclass">Estados Financieros</a>
+    <a href="logout" class="logout-link">Cerrar sesión</a>
+  </div>
+
+  <div class="content">
+    <h2 class="text-center mt-5">Estados Financieros</h2>
+    <div class="container text-center mt-5">
+      <div class="row">
+        <div class="col-lg-6 col-md-6 col-sm-12">
+          <a href="/balance_comprobacion" class="btn btn-primary btn-grande mb-3 btn-block">Balance de Comprobación</a>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12">
+          <a href="/estado_resultados" class="btn btn-primary btn-grande mb-3 btn-block">Estado de Resultados</a>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6 col-md-6 col-sm-12">
+          <a href="/estado_capital" class="btn btn-primary btn-grande mb-3 btn-block">Estado de Capital</a>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12">
+          <a href="/balance_general" class="btn btn-primary btn-grande mb-3 btn-block">Balance General</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

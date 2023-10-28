@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Cuentas</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'styles/catalogo.css' %}">
+</head>
+<body>
+  <div style="display: block;">
+    <div class="sidebar">
+      <div class="py-4 text-center logo">
+        <a href="/"><img src="{% static 'img/home.png' %}" alt="home"></a>
+      </div>
+      <a href="/catalogo_cuentas" class="aclass">Catálogo de Cuentas</a>
+      <a href="/transacciones" class="aclass">Transacciones</a>
+      <a href="/control_costos" class="aclass">Control de Costos</a>
+      <a href="/estados_financieros" class="aclass" >Estados Financieros</a>
+      <a href="logout" class="logout-link">Cerrar sesión</a>
+    </div>
+    <div class="content text-center" name="crud">
+      <h2 class="text-center">Catálogo de cuentas</h2>
+    
+      <!-- Botón para agregar cuentas -->
+      <!--<button class="btn btn-primary btn-lg d-block mx-auto mb-3" data-toggle="modal" data-target="#agregarCuentaModal">Agregar Cuenta</button>-->
+    
+      <!-- Tabla Bootstrap para mostrar cuentas -->
+      <!-- Tabla Bootstrap para mostrar cuentas con estilo oscuro -->
+<div class="table-responsive">
+  <table class="table table-striped table-dark table-bordered">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nombre</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cuenta in cuentas %}
+        <tr>
+          <td>{{ cuenta.codigo }}</td>
+          <td>{{ cuenta.nombre }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+    </div>
+    <div class="modal fade" id="agregarCuentaModal" tabindex="-1" role="dialog" aria-labelledby="agregarCuentaModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="agregarCuentaModalLabel">Agregar Cuenta</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <!-- Formulario para agregar cuentas -->
+            <form method="post" action="{% url 'agregar_cuenta' %}">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="codigo">Código:</label>
+                <input type="text" class="form-control" id="codigo" name="codigo">
+              </div>
+              <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" class="form-control" id="nombre" name="nombre">
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="agregarCuenta">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

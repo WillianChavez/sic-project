@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Libro Mayor</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'styles/libromayor.css' %}">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="py-4 text-center logo">
+      <a href="/"><img src="{% static 'img/home.png' %}" alt="home"></a>
+    </div>
+    <a href="transacciones" class="aclass">Regresar</a>
+    <a href="logout" class="logout-link">Cerrar sesión</a>
+  </div>
+
+  <div class="content d-flex justify-content-center align-items-center flex-column">
+    <h2 style="margin-bottom: 15px;">Libro Mayor</h2>
+    <div class="btn-group">
+      <a href="/actualizar_resumen_cuentas" class="btn btn-dark mb-2" data-toggle="modal" data-target="#totalizar">Seleccionar periodo que desea ver</a>
+    </div>
+    <div class="modal fade" id="totalizar" tabindex="-1" role="dialog" aria-labelledby="totalizar" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="totalizar">Libro Mayor</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <form method="post" action="{% url 'libro_mayor' %}">
+                      {% csrf_token %}
+                      <div class="form-group">
+                        <label for="periodo">Período:</label>
+                        <select class="form-control" id="periodo" name="periodo" required>
+                            {% for periodo in periodos %}
+                                <option value="{{ periodo.codigo }}">{{ periodo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Mostrar</button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Código de Cuenta</th>
+                <th>Nombre de Cuenta</th>
+                <th>Debe Total</th>
+                <th>Haber Total</th>
+                <th>Saldo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cuenta in resultados %}
+            <tr>
+                <td>{{ cuenta.codigo }}</td>
+                <td>{{ cuenta.nombre }}</td>
+                <td style="background-color: rgb(217, 217, 217);">${{ cuenta.resumen_cuentas__debe_total }}</td>
+                <td style="background-color: rgb(255, 225, 225);">${{ cuenta.resumen_cuentas__haber_total }}</td>
+                <td style="background-color: rgb(177, 255, 173);">${{ cuenta.resumen_cuentas__saldo }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
