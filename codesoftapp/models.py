@@ -8,6 +8,7 @@ class Periodo(models.Model):
     def __str__(self):
         return self.nombre
 
+
 class Cuenta(models.Model):
     class Meta:
         app_label = 'codesoftapp'

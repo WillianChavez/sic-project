@@ -882,3 +882,12 @@ def agregar_a_partida_doble(request):
 
         total = suma_costo_real
     return redirect('/mano_de_obra_directa')
+
+def ver_balance_general_de_periodo(request,id_periodo):
+    periodo = get_object_or_404(Periodo, pk=id_periodo)
+
+    # obtener todas las cuentas
+    cuentas = Cuenta.objects.all()
+
+    # si hay un periodo seleccionado, realizar los calculos
+    resumenDeCuentas = ResumenCuentas.objects.filter(periodo=periodo).order_by('cuenta__codigo')
