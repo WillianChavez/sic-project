@@ -4,188 +4,250 @@ from django.contrib.auth import logout
 from .models import Cuenta, Transaccion, ResumenCuentas, Periodo, ManoDeObra
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
-from django.db.models import Sum, FloatField, Case, When, F, Value, IntegerField, DecimalField
+from django.db.models import (
+    Sum,
+    FloatField,
+    Case,
+    When,
+    F,
+    Value,
+    IntegerField,
+    DecimalField,
+)
 from decimal import Decimal
 
 
 # Vista para la página de inicio
 @login_required
 def inicio(request):
-    return render(request, 'index.html')
+    return render(request, "index.html")
+
 
 # Vista para cerrar sesión
 def logout_view(request):
     logout(request)
-    return redirect('/')
+    return redirect("/")
+
 
 # Vista para mostrar el catálogo de cuentas
 @login_required
 def catalogo(request):
-    cuentas = Cuenta.objects.all().order_by('codigo')
-    return render(request, 'catalogo/catalogo.html', {'cuentas': cuentas})
+    cuentas = Cuenta.objects.all().order_by("codigo")
+    return render(request, "catalogo/catalogo.html", {"cuentas": cuentas})
+
 
 # Vistas relacionadas con el control de costos
 @login_required
 def control(request):
-    return render(request, 'controlcostos/controlcostos.html')
+    return render(request, "controlcostos/controlcostos.html")
+
 
 @login_required
 def indirectos(request):
-    return render(request, 'controlcostos/indirectos.html')
+    return render(request, "controlcostos/indirectos.html")
+
 
 @login_required
 def manoobra(request):
     registros = ManoDeObra.objects.all()
     # Recalcula las sumas totales después de eliminar el empleado
-    suma_pago_diario = ManoDeObra.objects.aggregate(Sum('pago_diario'))['pago_diario__sum']
-    suma_septimo_dia = ManoDeObra.objects.aggregate(Sum('septimo_dia'))['septimo_dia__sum']
-    suma_vacaciones = ManoDeObra.objects.aggregate(Sum('vacaciones'))['vacaciones__sum']
-    suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum('salario_cancelado'))['salario_cancelado__sum']
-    suma_aguinaldo = ManoDeObra.objects.aggregate(Sum('aguinaldo'))['aguinaldo__sum']
-    suma_iss = ManoDeObra.objects.aggregate(Sum('iss'))['iss__sum']
-    suma_afp = ManoDeObra.objects.aggregate(Sum('afp'))['afp__sum']
-    suma_insaforp = ManoDeObra.objects.aggregate(Sum('insaforp'))['insaforp__sum']
-    suma_costo_real = ManoDeObra.objects.aggregate(Sum('costo_real'))['costo_real__sum']
+    suma_pago_diario = ManoDeObra.objects.aggregate(Sum("pago_diario"))[
+        "pago_diario__sum"
+    ]
+    suma_septimo_dia = ManoDeObra.objects.aggregate(Sum("septimo_dia"))[
+        "septimo_dia__sum"
+    ]
+    suma_vacaciones = ManoDeObra.objects.aggregate(Sum("vacaciones"))["vacaciones__sum"]
+    suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum("salario_cancelado"))[
+        "salario_cancelado__sum"
+    ]
+    suma_aguinaldo = ManoDeObra.objects.aggregate(Sum("aguinaldo"))["aguinaldo__sum"]
+    suma_iss = ManoDeObra.objects.aggregate(Sum("iss"))["iss__sum"]
+    suma_afp = ManoDeObra.objects.aggregate(Sum("afp"))["afp__sum"]
+    suma_insaforp = ManoDeObra.objects.aggregate(Sum("insaforp"))["insaforp__sum"]
+    suma_costo_real = ManoDeObra.objects.aggregate(Sum("costo_real"))["costo_real__sum"]
     total = suma_costo_real
     periodos = Periodo.objects.all()
-    return render(request, 'controlcostos/manoobra.html', {'registros': registros,
-        'suma_pago_diario': suma_pago_diario,
-        'suma_septimo_dia': suma_septimo_dia,
-        'suma_vacaciones': suma_vacaciones,
-        'suma_salario_cancelado': suma_salario_cancelado,
-        'suma_aguinaldo': suma_aguinaldo,
-        'suma_iss': suma_iss,
-        'suma_afp': suma_afp,
-        'suma_insaforp': suma_insaforp,
-        'suma_costo_real': suma_costo_real,
-        'periodos':periodos})
+    return render(
+        request,
+        "controlcostos/manoobra.html",
+        {
+            "registros": registros,
+            "suma_pago_diario": suma_pago_diario,
+            "suma_septimo_dia": suma_septimo_dia,
+            "suma_vacaciones": suma_vacaciones,
+            "suma_salario_cancelado": suma_salario_cancelado,
+            "suma_aguinaldo": suma_aguinaldo,
+            "suma_iss": suma_iss,
+            "suma_afp": suma_afp,
+            "suma_insaforp": suma_insaforp,
+            "suma_costo_real": suma_costo_real,
+            "periodos": periodos,
+        },
+    )
+
 
 # Vistas relacionadas con los estados financieros
 @login_required
 def estados(request):
-    return render(request, 'estadosfinancieros/estadosfinancieros.html')
+    return render(request, "estadosfinancieros/estadosfinancieros.html")
+
 
 @login_required
 def comprobacion(request, periodo_id=None):
-    if request.method == 'POST':
-        periodo_id = request.POST.get('periodo')
-        
+    if request.method == "POST":
+        periodo_id = request.POST.get("periodo")
+
     periodos = Periodo.objects.all()
     periodo_seleccionado = None
     if periodo_id:
         periodo_seleccionado = get_object_or_404(Periodo, pk=periodo_id)
         if not periodo_seleccionado:
             periodo_seleccionado = None
-    
-    consulta = Cuenta.objects.filter(resumen_cuentas__isnull=False, resumen_cuentas__periodo=periodo_seleccionado)
-    consulta = consulta.values('codigo', 'nombre', 'resumen_cuentas__debe_total', 'resumen_cuentas__haber_total', 'resumen_cuentas__saldo')
+
+    consulta = Cuenta.objects.filter(
+        resumen_cuentas__isnull=False, resumen_cuentas__periodo=periodo_seleccionado
+    )
+    consulta = consulta.values(
+        "codigo",
+        "nombre",
+        "resumen_cuentas__debe_total",
+        "resumen_cuentas__haber_total",
+        "resumen_cuentas__saldo",
+    )
     resultados = []
     suma_debe_total = Decimal(0)  # Inicializa la suma del debe
     suma_haber_total = Decimal(0)  # Inicializa la suma del haber
-    
+
     for cuenta in consulta:
-        if '1000' <= cuenta['codigo'] <= '1203':
-            cuenta['resumen_cuentas__debe_total'] = cuenta['resumen_cuentas__saldo']
-            cuenta['resumen_cuentas__haber_total'] = 0
-            if(cuenta['resumen_cuentas__debe_total'] < 0):
-                cuenta['resumen_cuentas__haber_total'] = -1* (cuenta['resumen_cuentas__debe_total'])
-                cuenta['resumen_cuentas__debe_total'] = 0
-            if(cuenta['resumen_cuentas__haber_total'] < 0):
-                cuenta['resumen_cuentas__debe_total'] = -1* (cuenta['resumen_cuentas__haber_total'])
-                cuenta['resumen_cuentas__haber_total'] = 0
+        if "1000" <= cuenta["codigo"] <= "1203":
+            cuenta["resumen_cuentas__debe_total"] = cuenta["resumen_cuentas__saldo"]
+            cuenta["resumen_cuentas__haber_total"] = 0
+            if cuenta["resumen_cuentas__debe_total"] < 0:
+                cuenta["resumen_cuentas__haber_total"] = -1 * (
+                    cuenta["resumen_cuentas__debe_total"]
+                )
+                cuenta["resumen_cuentas__debe_total"] = 0
+            if cuenta["resumen_cuentas__haber_total"] < 0:
+                cuenta["resumen_cuentas__debe_total"] = -1 * (
+                    cuenta["resumen_cuentas__haber_total"]
+                )
+                cuenta["resumen_cuentas__haber_total"] = 0
 
-        elif '2101' <= cuenta['codigo'] <= '3102':
-            cuenta['resumen_cuentas__haber_total'] = cuenta['resumen_cuentas__saldo']
-            cuenta['resumen_cuentas__debe_total'] = 0
-            if(cuenta['resumen_cuentas__debe_total'] < 0):
-                cuenta['resumen_cuentas__haber_total'] = -1* (cuenta['resumen_cuentas__debe_total'])
-                cuenta['resumen_cuentas__debe_total'] = 0
-            if(cuenta['resumen_cuentas__haber_total'] < 0):
-                cuenta['resumen_cuentas__debe_total'] = -1* (cuenta['resumen_cuentas__haber_total'])
-                cuenta['resumen_cuentas__haber_total'] = 0
+        elif "2101" <= cuenta["codigo"] <= "3102":
+            cuenta["resumen_cuentas__haber_total"] = cuenta["resumen_cuentas__saldo"]
+            cuenta["resumen_cuentas__debe_total"] = 0
+            if cuenta["resumen_cuentas__debe_total"] < 0:
+                cuenta["resumen_cuentas__haber_total"] = -1 * (
+                    cuenta["resumen_cuentas__debe_total"]
+                )
+                cuenta["resumen_cuentas__debe_total"] = 0
+            if cuenta["resumen_cuentas__haber_total"] < 0:
+                cuenta["resumen_cuentas__debe_total"] = -1 * (
+                    cuenta["resumen_cuentas__haber_total"]
+                )
+                cuenta["resumen_cuentas__haber_total"] = 0
 
-        elif '4101' <= cuenta['codigo'] <= '4112':
-            cuenta['resumen_cuentas__debe_total'] = cuenta['resumen_cuentas__saldo']
-            cuenta['resumen_cuentas__haber_total'] = 0
-            if(cuenta['resumen_cuentas__debe_total'] < 0):
-                cuenta['resumen_cuentas__haber_total'] = -1* (cuenta['resumen_cuentas__debe_total'])
-                cuenta['resumen_cuentas__debe_total'] = 0
-            if(cuenta['resumen_cuentas__haber_total'] < 0):
-                cuenta['resumen_cuentas__debe_total'] = -1* (cuenta['resumen_cuentas__haber_total'])
-                cuenta['resumen_cuentas__haber_total'] = 0
+        elif "4101" <= cuenta["codigo"] <= "4112":
+            cuenta["resumen_cuentas__debe_total"] = cuenta["resumen_cuentas__saldo"]
+            cuenta["resumen_cuentas__haber_total"] = 0
+            if cuenta["resumen_cuentas__debe_total"] < 0:
+                cuenta["resumen_cuentas__haber_total"] = -1 * (
+                    cuenta["resumen_cuentas__debe_total"]
+                )
+                cuenta["resumen_cuentas__debe_total"] = 0
+            if cuenta["resumen_cuentas__haber_total"] < 0:
+                cuenta["resumen_cuentas__debe_total"] = -1 * (
+                    cuenta["resumen_cuentas__haber_total"]
+                )
+                cuenta["resumen_cuentas__haber_total"] = 0
 
-        elif '510101' <= cuenta['codigo'] <= '510202':
-            cuenta['resumen_cuentas__haber_total'] = cuenta['resumen_cuentas__saldo']
-            cuenta['resumen_cuentas__debe_total'] = 0
-            if(cuenta['resumen_cuentas__debe_total'] < 0):
-                cuenta['resumen_cuentas__haber_total'] = -1* (cuenta['resumen_cuentas__debe_total'])
-                cuenta['resumen_cuentas__debe_total'] = 0
-            if(cuenta['resumen_cuentas__haber_total'] < 0):
-                cuenta['resumen_cuentas__debe_total'] = -1* (cuenta['resumen_cuentas__haber_total'])
-                cuenta['resumen_cuentas__haber_total'] = 0
-        
+        elif "510101" <= cuenta["codigo"] <= "510202":
+            cuenta["resumen_cuentas__haber_total"] = cuenta["resumen_cuentas__saldo"]
+            cuenta["resumen_cuentas__debe_total"] = 0
+            if cuenta["resumen_cuentas__debe_total"] < 0:
+                cuenta["resumen_cuentas__haber_total"] = -1 * (
+                    cuenta["resumen_cuentas__debe_total"]
+                )
+                cuenta["resumen_cuentas__debe_total"] = 0
+            if cuenta["resumen_cuentas__haber_total"] < 0:
+                cuenta["resumen_cuentas__debe_total"] = -1 * (
+                    cuenta["resumen_cuentas__haber_total"]
+                )
+                cuenta["resumen_cuentas__haber_total"] = 0
+
         resultados.append(cuenta)
-        
-        suma_debe_total += cuenta['resumen_cuentas__debe_total']
-        suma_haber_total += cuenta['resumen_cuentas__haber_total']
-    if(suma_debe_total < 0):
-        suma_haber_total = -1*(suma_debe_total)
-        suma_debe_total=0
 
-    if(suma_haber_total < 0):
-        suma_debe_total = -1*(suma_haber_total)
-        suma_haber_total=0
-    return render(request, 'estadosfinancieros/comprobacion.html', {
-            'resultados': resultados,
-            'suma_debe_total': suma_debe_total,
-            'suma_haber_total': suma_haber_total,
-            'periodos': periodos,
-            'periodo_seleccionado': periodo_seleccionado,
-        })
+        suma_debe_total += cuenta["resumen_cuentas__debe_total"]
+        suma_haber_total += cuenta["resumen_cuentas__haber_total"]
+    if suma_debe_total < 0:
+        suma_haber_total = -1 * (suma_debe_total)
+        suma_debe_total = 0
+
+    if suma_haber_total < 0:
+        suma_debe_total = -1 * (suma_haber_total)
+        suma_haber_total = 0
+    return render(
+        request,
+        "estadosfinancieros/comprobacion.html",
+        {
+            "resultados": resultados,
+            "suma_debe_total": suma_debe_total,
+            "suma_haber_total": suma_haber_total,
+            "periodos": periodos,
+            "periodo_seleccionado": periodo_seleccionado,
+        },
+    )
+
 
 @login_required
 def ajustes(request):
-    return render(request, 'estadosfinancieros/ajustes.html')
+    return render(request, "estadosfinancieros/ajustes.html")
+
 
 @login_required
 def ajustado(request):
-    return render(request, 'estadosfinancieros/ajustado.html')
+    return render(request, "estadosfinancieros/ajustado.html")
+
 
 @login_required
 def general(request):
-    return render(request, 'estadosfinancieros/general.html')
+    periodos = Periodo.objects.all()
+    return render(request, "estadosfinancieros/general.html", {"periodos": periodos})
+
 
 from decimal import Decimal
 from django.db.models import F, ExpressionWrapper, DecimalField, Sum
 from django.db.models.functions import Coalesce
 
+
 @login_required
 def resultados(request, periodo_id=None):
-    if request.method == 'POST':
-        periodo_id = request.POST.get('periodo')
-        
+    if request.method == "POST":
+        periodo_id = request.POST.get("periodo")
+
     periodos = Periodo.objects.all()
     periodo_seleccionado = None
-    
+
     if periodo_id:
         periodo_seleccionado = get_object_or_404(Periodo, pk=periodo_id)
 
     consultas = Cuenta.objects.filter(
         resumen_cuentas__isnull=False,
         resumen_cuentas__periodo=periodo_seleccionado,
-        codigo__in=['4101', '4103']
+        codigo__in=["4101", "4103"],
     ).annotate(
-        debe_total=Coalesce(F('resumen_cuentas__debe_total'), 0),
-        haber_total=Coalesce(F('resumen_cuentas__haber_total'), 0)
+        debe_total=Coalesce(F("resumen_cuentas__debe_total"), 0),
+        haber_total=Coalesce(F("resumen_cuentas__haber_total"), 0),
     )
 
-    suma_debe_total1 = consultas.filter(codigo='4101').aggregate(
-        Sum('debe_total', output_field=DecimalField())
-    )['debe_total__sum'] or Decimal(0)
+    suma_debe_total1 = consultas.filter(codigo="4101").aggregate(
+        Sum("debe_total", output_field=DecimalField())
+    )["debe_total__sum"] or Decimal(0)
 
-    suma_haber_total1 = consultas.filter(codigo='4101').aggregate(
-        Sum('haber_total', output_field=DecimalField())
-    )['haber_total__sum'] or Decimal(0)
+    suma_haber_total1 = consultas.filter(codigo="4101").aggregate(
+        Sum("haber_total", output_field=DecimalField())
+    )["haber_total__sum"] or Decimal(0)
 
     if suma_debe_total1 < 0:
         suma_haber_total1 = -1 * suma_debe_total1
@@ -195,13 +257,13 @@ def resultados(request, periodo_id=None):
         suma_debe_total1 = -1 * suma_haber_total1
         suma_haber_total1 = Decimal(0)
 
-    suma_debe_total2 = consultas.filter(codigo='4103').aggregate(
-        Sum('debe_total', output_field=DecimalField())
-    )['debe_total__sum'] or Decimal(0)
+    suma_debe_total2 = consultas.filter(codigo="4103").aggregate(
+        Sum("debe_total", output_field=DecimalField())
+    )["debe_total__sum"] or Decimal(0)
 
-    suma_haber_total2 = consultas.filter(codigo='4103').aggregate(
-        Sum('haber_total', output_field=DecimalField())
-    )['haber_total__sum'] or Decimal(0)
+    suma_haber_total2 = consultas.filter(codigo="4103").aggregate(
+        Sum("haber_total", output_field=DecimalField())
+    )["haber_total__sum"] or Decimal(0)
 
     if suma_debe_total2 < 0:
         suma_haber_total2 = -1 * suma_debe_total2
@@ -220,23 +282,29 @@ def resultados(request, periodo_id=None):
         utilidades_debe = utilidades_haber * -1
         utilidades_haber = 0
 
-    return render(request, 'estadosfinancieros/resultados.html', {
-        'suma_debe_total1': suma_debe_total1,
-        'suma_haber_total1': suma_haber_total1,
-        'suma_debe_total2': suma_debe_total2,
-        'suma_haber_total2': suma_haber_total2,
-        'suma_debe': suma_debe,
-        'suma_haber': suma_haber,
-        'utilidades_haber': utilidades_haber,
-        'utilidades_debe':utilidades_debe,
-        'periodos': periodos,
-        'periodo_seleccionado': periodo_seleccionado,
-    })
+    return render(
+        request,
+        "estadosfinancieros/resultados.html",
+        {
+            "suma_debe_total1": suma_debe_total1,
+            "suma_haber_total1": suma_haber_total1,
+            "suma_debe_total2": suma_debe_total2,
+            "suma_haber_total2": suma_haber_total2,
+            "suma_debe": suma_debe,
+            "suma_haber": suma_haber,
+            "utilidades_haber": utilidades_haber,
+            "utilidades_debe": utilidades_debe,
+            "periodos": periodos,
+            "periodo_seleccionado": periodo_seleccionado,
+        },
+    )
 
 
 @login_required
 def capital(request):
-    return render(request, 'estadosfinancieros/capital.html')
+    periodos = Periodo.objects.all()
+    return render(request, "estadosfinancieros/capital.html", {"periodos": periodos})
+
 
 # Vistas relacionadas con las transacciones
 @login_required
@@ -250,51 +318,71 @@ def transacciones(request, periodo_id=None):
     if not periodo_seleccionado:
         periodo_seleccionado = None
 
-    transacciones = Transaccion.objects.filter(periodo=periodo_seleccionado).order_by('codigo')
-    cuentas = Cuenta.objects.all().order_by('codigo')
-    suma_debe = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(Sum('movimiento_debe'))['movimiento_debe__sum'] or Decimal(0)
-    suma_haber = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(Sum('movimiento_haber'))['movimiento_haber__sum'] or Decimal(0)
-    
-    return render(request, 'transacciones/transacciones.html', {
-        'cuentas': cuentas,
-        'suma_debe': suma_debe,
-        'suma_haber': suma_haber,
-        'periodos': periodos,
-        'periodo_seleccionado': periodo_seleccionado,
-    })
+    transacciones = Transaccion.objects.filter(periodo=periodo_seleccionado).order_by(
+        "codigo"
+    )
+    cuentas = Cuenta.objects.all().order_by("codigo")
+    suma_debe = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(
+        Sum("movimiento_debe")
+    )["movimiento_debe__sum"] or Decimal(0)
+    suma_haber = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(
+        Sum("movimiento_haber")
+    )["movimiento_haber__sum"] or Decimal(0)
+
+    return render(
+        request,
+        "transacciones/transacciones.html",
+        {
+            "cuentas": cuentas,
+            "suma_debe": suma_debe,
+            "suma_haber": suma_haber,
+            "periodos": periodos,
+            "periodo_seleccionado": periodo_seleccionado,
+        },
+    )
+
 
 @login_required
 def agregar_cuenta(request):
-    cuentas = Cuenta.objects.all().order_by('codigo')
+    cuentas = Cuenta.objects.all().order_by("codigo")
     error_message = None
 
-    if request.method == 'POST':
-        codigo = request.POST.get('codigo')
-        nombre = request.POST.get('nombre')
+    if request.method == "POST":
+        codigo = request.POST.get("codigo")
+        nombre = request.POST.get("nombre")
 
-        cuenta_existente = Cuenta.objects.filter(Q(codigo=codigo) | Q(nombre=nombre)).first()
+        cuenta_existente = Cuenta.objects.filter(
+            Q(codigo=codigo) | Q(nombre=nombre)
+        ).first()
 
         if cuenta_existente:
-            error_message = "Una cuenta con el mismo código o nombre ya existe en la base de datos."
+            error_message = (
+                "Una cuenta con el mismo código o nombre ya existe en la base de datos."
+            )
         else:
             nueva_cuenta = Cuenta(codigo=codigo, nombre=nombre)
             nueva_cuenta.save()
-    
-    return render(request, 'catalogo/catalogo.html', {'cuentas': cuentas, 'error_message': error_message})
+
+    return render(
+        request,
+        "catalogo/catalogo.html",
+        {"cuentas": cuentas, "error_message": error_message},
+    )
+
 
 @login_required
 def agregar_transaccion(request, periodo_id=None):
     periodos = Periodo.objects.all()
     periodo_seleccionado = None
-    cuentas = Cuenta.objects.all().order_by('codigo')
+    cuentas = Cuenta.objects.all().order_by("codigo")
 
-    if request.method == 'POST':
-        codigo = request.POST.get('codigo')
-        fecha = request.POST.get('fecha')
-        descripcion = request.POST.get('descripcion')
-        movimiento_debe = request.POST.get('movimiento_debe', 0)
-        movimiento_haber = request.POST.get('movimiento_haber', 0)
-        periodo_id = request.POST.get('periodo')
+    if request.method == "POST":
+        codigo = request.POST.get("codigo")
+        fecha = request.POST.get("fecha")
+        descripcion = request.POST.get("descripcion")
+        movimiento_debe = request.POST.get("movimiento_debe", 0)
+        movimiento_haber = request.POST.get("movimiento_haber", 0)
+        periodo_id = request.POST.get("periodo")
 
         if periodo_id:
             periodo_seleccionado = get_object_or_404(Periodo, pk=periodo_id)
@@ -308,67 +396,89 @@ def agregar_transaccion(request, periodo_id=None):
             descripcion=descripcion,
             movimiento_debe=movimiento_debe,
             movimiento_haber=movimiento_haber,
-            periodo_id = periodo_id
+            periodo_id=periodo_id,
         )
         nueva_transaccion.save()
 
-    suma_debe = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(Sum('movimiento_debe'))['movimiento_debe__sum'] or Decimal(0)
-    suma_haber = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(Sum('movimiento_haber'))['movimiento_haber__sum'] or Decimal(0)
+    suma_debe = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(
+        Sum("movimiento_debe")
+    )["movimiento_debe__sum"] or Decimal(0)
+    suma_haber = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(
+        Sum("movimiento_haber")
+    )["movimiento_haber__sum"] or Decimal(0)
 
-    return render(request, 'transacciones/transacciones.html', {
-        'transacciones': transacciones,
-        'suma_debe': suma_debe,
-        'suma_haber': suma_haber,
-        'periodos': periodos,
-        'periodo_seleccionado': periodo_seleccionado,
-        'cuentas':cuentas
-    })
+    return render(
+        request,
+        "transacciones/transacciones.html",
+        {
+            "transacciones": transacciones,
+            "suma_debe": suma_debe,
+            "suma_haber": suma_haber,
+            "periodos": periodos,
+            "periodo_seleccionado": periodo_seleccionado,
+            "cuentas": cuentas,
+        },
+    )
+
 
 def modificar_transaccion(request, transaccion_id):
     transaccion = get_object_or_404(Transaccion, pk=transaccion_id)
-    
-    if request.method == 'POST':
-        if 'codigo' in request.POST:
-            codigo_cuenta = request.POST['codigo']
-            cuenta = Cuenta.objects.get(codigo=codigo_cuenta)  # Encuentra la cuenta con el código proporcionado
+
+    if request.method == "POST":
+        if "codigo" in request.POST:
+            codigo_cuenta = request.POST["codigo"]
+            cuenta = Cuenta.objects.get(
+                codigo=codigo_cuenta
+            )  # Encuentra la cuenta con el código proporcionado
             transaccion.codigo = cuenta  # Asigna la cuenta a la transacción
-        if 'fecha' in request.POST:
-            transaccion.fecha = request.POST['fecha']
-        if 'descripcion' in request.POST:
-            transaccion.descripcion = request.POST['descripcion']
-        if 'movimiento_debe' in request.POST:
-            transaccion.movimiento_debe = request.POST['movimiento_debe']
+        if "fecha" in request.POST:
+            transaccion.fecha = request.POST["fecha"]
+        if "descripcion" in request.POST:
+            transaccion.descripcion = request.POST["descripcion"]
+        if "movimiento_debe" in request.POST:
+            transaccion.movimiento_debe = request.POST["movimiento_debe"]
         else:
             transaccion.movimiento_debe = 0
-        if 'movimiento_haber' in request.POST:
-            transaccion.movimiento_haber = request.POST['movimiento_haber']
+        if "movimiento_haber" in request.POST:
+            transaccion.movimiento_haber = request.POST["movimiento_haber"]
         else:
             transaccion.movimiento_haber = 0
         transaccion.save()
-    
+
     periodos = Periodo.objects.all()
     periodo_seleccionado = None
 
-    if request.method == 'POST':
-        periodo_id = request.POST.get('periodo-select', 'Ninguno')  # Obtén el ID del período desde el formulario
-        if periodo_id != 'Ninguno':
+    if request.method == "POST":
+        periodo_id = request.POST.get(
+            "periodo-select", "Ninguno"
+        )  # Obtén el ID del período desde el formulario
+        if periodo_id != "Ninguno":
             periodo_seleccionado = get_object_or_404(Periodo, pk=periodo_id)
 
-    transacciones = Transaccion.objects.filter(periodo=periodo_seleccionado).order_by('fecha')
-    suma_debe = transacciones.aggregate(Sum('movimiento_debe'))['movimiento_debe__sum'] or Decimal(0)
-    suma_haber = transacciones.aggregate(Sum('movimiento_haber'))['movimiento_haber__sum'] or Decimal(0)
-    cuentas = Cuenta.objects.all().order_by('codigo')
+    transacciones = Transaccion.objects.filter(periodo=periodo_seleccionado).order_by(
+        "fecha"
+    )
+    suma_debe = transacciones.aggregate(Sum("movimiento_debe"))[
+        "movimiento_debe__sum"
+    ] or Decimal(0)
+    suma_haber = transacciones.aggregate(Sum("movimiento_haber"))[
+        "movimiento_haber__sum"
+    ] or Decimal(0)
+    cuentas = Cuenta.objects.all().order_by("codigo")
 
-    return render(request, 'transacciones/transacciones.html', {
-        'transaccion': transaccion,
-        'transacciones': transacciones,
-        'suma_debe': suma_debe,
-        'suma_haber': suma_haber,
-        'cuentas': cuentas,
-        'periodos': periodos,
-        'periodo_seleccionado': periodo_seleccionado,
-    })
-
+    return render(
+        request,
+        "transacciones/transacciones.html",
+        {
+            "transaccion": transaccion,
+            "transacciones": transacciones,
+            "suma_debe": suma_debe,
+            "suma_haber": suma_haber,
+            "cuentas": cuentas,
+            "periodos": periodos,
+            "periodo_seleccionado": periodo_seleccionado,
+        },
+    )
 
 
 @login_required
@@ -376,24 +486,33 @@ def eliminar_transaccion(request, transaccion_id):
     transaccion = Transaccion.objects.get(id=transaccion_id)
     transaccion.delete()
 
-    transacciones = Transaccion.objects.filter(periodo=transaccion.periodo).order_by('fecha')
-    suma_debe = Transaccion.objects.filter(periodo=transaccion.periodo).aggregate(Sum('movimiento_debe'))['movimiento_debe__sum'] or Decimal(0)
-    suma_haber = Transaccion.objects.filter(periodo=transaccion.periodo).aggregate(Sum('movimiento_haber'))['movimiento_haber__sum'] or Decimal(0)
-    cuentas = Cuenta.objects.all().order_by('codigo')
+    transacciones = Transaccion.objects.filter(periodo=transaccion.periodo).order_by(
+        "fecha"
+    )
+    suma_debe = Transaccion.objects.filter(periodo=transaccion.periodo).aggregate(
+        Sum("movimiento_debe")
+    )["movimiento_debe__sum"] or Decimal(0)
+    suma_haber = Transaccion.objects.filter(periodo=transaccion.periodo).aggregate(
+        Sum("movimiento_haber")
+    )["movimiento_haber__sum"] or Decimal(0)
+    cuentas = Cuenta.objects.all().order_by("codigo")
 
-    return redirect('/transacciones', {
-        'transaccion': transaccion,
-        'transacciones': transacciones,
-        'suma_debe': suma_debe,
-        'suma_haber': suma_haber,
-        'cuentas': cuentas,
-    })
+    return redirect(
+        "/transacciones",
+        {
+            "transaccion": transaccion,
+            "transacciones": transacciones,
+            "suma_debe": suma_debe,
+            "suma_haber": suma_haber,
+            "cuentas": cuentas,
+        },
+    )
 
 
 @login_required
 def libro_mayor(request, periodo_id=None):
-    if request.method == 'POST':
-        periodo_id = request.POST.get('periodo')
+    if request.method == "POST":
+        periodo_id = request.POST.get("periodo")
         periodos = Periodo.objects.all()
         periodo_seleccionado = None
 
@@ -403,8 +522,16 @@ def libro_mayor(request, periodo_id=None):
         if not periodo_seleccionado:
             periodo_seleccionado = None
 
-        consulta = Cuenta.objects.filter(resumen_cuentas__isnull=False, resumen_cuentas__periodo=periodo_seleccionado)
-        consulta = consulta.values('codigo', 'nombre', 'resumen_cuentas__debe_total', 'resumen_cuentas__haber_total', 'resumen_cuentas__saldo')
+        consulta = Cuenta.objects.filter(
+            resumen_cuentas__isnull=False, resumen_cuentas__periodo=periodo_seleccionado
+        )
+        consulta = consulta.values(
+            "codigo",
+            "nombre",
+            "resumen_cuentas__debe_total",
+            "resumen_cuentas__haber_total",
+            "resumen_cuentas__saldo",
+        )
         resultados = consulta.all()
     else:
         periodos = Periodo.objects.all()
@@ -416,24 +543,37 @@ def libro_mayor(request, periodo_id=None):
         if not periodo_seleccionado:
             periodo_seleccionado = None
 
-        consulta = Cuenta.objects.filter(resumen_cuentas__isnull=False, resumen_cuentas__periodo=periodo_seleccionado)
-        consulta = consulta.values('codigo', 'nombre', 'resumen_cuentas__debe_total', 'resumen_cuentas__haber_total', 'resumen_cuentas__saldo')
+        consulta = Cuenta.objects.filter(
+            resumen_cuentas__isnull=False, resumen_cuentas__periodo=periodo_seleccionado
+        )
+        consulta = consulta.values(
+            "codigo",
+            "nombre",
+            "resumen_cuentas__debe_total",
+            "resumen_cuentas__haber_total",
+            "resumen_cuentas__saldo",
+        )
         resultados = consulta.all()
-        resultados = resultados.order_by('codigo')
+        resultados = resultados.order_by("codigo")
 
-    return render(request, 'transacciones/libromayor.html', {
-        'resultados': resultados,
-        'periodos': periodos,
-        'periodo_seleccionado': periodo_seleccionado,
-    })
+    return render(
+        request,
+        "transacciones/libromayor.html",
+        {
+            "resultados": resultados,
+            "periodos": periodos,
+            "periodo_seleccionado": periodo_seleccionado,
+        },
+    )
+
 
 @login_required
 def crear_periodo(request, periodo_id=None):
-    if request.method == 'POST':
-        nombre_periodo = request.POST.get('nombre_periodo')
+    if request.method == "POST":
+        nombre_periodo = request.POST.get("nombre_periodo")
 
         # Encuentra el último período creado
-        ultimo_periodo = Periodo.objects.order_by('-codigo').first()
+        ultimo_periodo = Periodo.objects.order_by("-codigo").first()
         nuevo_codigo = 1  # Valor predeterminado si no hay ningún período existente
 
         if ultimo_periodo:
@@ -456,32 +596,47 @@ def crear_periodo(request, periodo_id=None):
     if not periodo_seleccionado:
         periodo_seleccionado = None
 
-    transacciones = Transaccion.objects.filter(periodo=periodo_seleccionado).order_by('codigo')
-    cuentas = Cuenta.objects.all().order_by('codigo')
-    suma_debe = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(Sum('movimiento_debe'))['movimiento_debe__sum'] or Decimal(0)
-    suma_haber = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(Sum('movimiento_haber'))['movimiento_haber__sum'] or Decimal(0)
-    
-    return render(request, 'transacciones/transacciones.html', {
-        'transacciones': transacciones,
-        'cuentas': cuentas,
-        'suma_debe': suma_debe,
-        'suma_haber': suma_haber,
-        'periodos': periodos,
-        'periodo_seleccionado': periodo_seleccionado,
-    })
+    transacciones = Transaccion.objects.filter(periodo=periodo_seleccionado).order_by(
+        "codigo"
+    )
+    cuentas = Cuenta.objects.all().order_by("codigo")
+    suma_debe = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(
+        Sum("movimiento_debe")
+    )["movimiento_debe__sum"] or Decimal(0)
+    suma_haber = Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(
+        Sum("movimiento_haber")
+    )["movimiento_haber__sum"] or Decimal(0)
 
+    return render(
+        request,
+        "transacciones/transacciones.html",
+        {
+            "transacciones": transacciones,
+            "cuentas": cuentas,
+            "suma_debe": suma_debe,
+            "suma_haber": suma_haber,
+            "periodos": periodos,
+            "periodo_seleccionado": periodo_seleccionado,
+        },
+    )
 
 
 def filtrar_transacciones(request, periodo_id=None):
     periodos = Periodo.objects.all()
-    cuentas = Cuenta.objects.all().order_by('codigo')
-    if request.method == 'POST':
-        periodo_id = request.POST.get('periodo-select')  # Obtén el ID del período desde el formulario
-        suma_debe = Transaccion.objects.filter(periodo=periodo_id).aggregate(Sum('movimiento_debe'))['movimiento_debe__sum'] or Decimal(0)
-        suma_haber = Transaccion.objects.filter(periodo=periodo_id).aggregate(Sum('movimiento_haber'))['movimiento_haber__sum'] or Decimal(0)
-        if periodo_id == 'Ninguno':
+    cuentas = Cuenta.objects.all().order_by("codigo")
+    if request.method == "POST":
+        periodo_id = request.POST.get(
+            "periodo-select"
+        )  # Obtén el ID del período desde el formulario
+        suma_debe = Transaccion.objects.filter(periodo=periodo_id).aggregate(
+            Sum("movimiento_debe")
+        )["movimiento_debe__sum"] or Decimal(0)
+        suma_haber = Transaccion.objects.filter(periodo=periodo_id).aggregate(
+            Sum("movimiento_haber")
+        )["movimiento_haber__sum"] or Decimal(0)
+        if periodo_id == "Ninguno":
             # Si se selecciona "Todos los períodos," muestra todas las transacciones
-            return render(request, 'transacciones/transacciones.html', {'periodos'})
+            return render(request, "transacciones/transacciones.html", {"periodos"})
         else:
             # De lo contrario, filtra las transacciones por el período seleccionado
             transacciones = Transaccion.objects.filter(periodo_id=periodo_id)
@@ -489,23 +644,28 @@ def filtrar_transacciones(request, periodo_id=None):
         # Aquí puedes realizar cualquier otro procesamiento necesario antes de mostrar las transacciones
 
         # A continuación, debes pasar las transacciones filtradas a la plantilla
-        return render(request, 'transacciones/transacciones.html', 
-                      {'transacciones':transacciones, 
-                       'suma_debe':suma_debe, 
-                       'suma_haber': suma_haber,
-                       'suma_haber': suma_haber,
-                       'periodos': periodos,
-                       'cuentas': cuentas,
-                       })
+        return render(
+            request,
+            "transacciones/transacciones.html",
+            {
+                "transacciones": transacciones,
+                "suma_debe": suma_debe,
+                "suma_haber": suma_haber,
+                "suma_haber": suma_haber,
+                "periodos": periodos,
+                "cuentas": cuentas,
+            },
+        )
 
 
 from decimal import Decimal
 
+
 @login_required
 def actualizar_resumen_cuentas(request, periodo_id=None):
     # Lógica para manejar solicitudes POST
-    if request.method == 'POST':
-        periodo_id = request.POST.get('periodo')
+    if request.method == "POST":
+        periodo_id = request.POST.get("periodo")
         periodo_seleccionado = None
         if periodo_id:
             periodo_seleccionado = get_object_or_404(Periodo, pk=periodo_id)
@@ -518,16 +678,26 @@ def actualizar_resumen_cuentas(request, periodo_id=None):
             cuentas = cuentas.annotate(
                 suma_debe=Sum(
                     Case(
-                        When(transaccion__periodo=periodo_seleccionado, then=F('transaccion__movimiento_debe')),
-                        default=Value(0, output_field=DecimalField()),  # Establece output_field como DecimalField
+                        When(
+                            transaccion__periodo=periodo_seleccionado,
+                            then=F("transaccion__movimiento_debe"),
+                        ),
+                        default=Value(
+                            0, output_field=DecimalField()
+                        ),  # Establece output_field como DecimalField
                     )
                 ),
                 suma_haber=Sum(
                     Case(
-                        When(transaccion__periodo=periodo_seleccionado, then=F('transaccion__movimiento_haber')),
-                        default=Value(0, output_field=DecimalField()),  # Establece output_field como DecimalField
+                        When(
+                            transaccion__periodo=periodo_seleccionado,
+                            then=F("transaccion__movimiento_haber"),
+                        ),
+                        default=Value(
+                            0, output_field=DecimalField()
+                        ),  # Establece output_field como DecimalField
                     )
-                )
+                ),
             )
 
             ResumenCuentas.objects.filter(periodo=periodo_seleccionado).delete()
@@ -537,29 +707,33 @@ def actualizar_resumen_cuentas(request, periodo_id=None):
                 suma_haber = float(cuenta.suma_haber)
                 saldo = 0
 
-                if '1000' <= cuenta.codigo <= '1203':
+                if "1000" <= cuenta.codigo <= "1203":
                     saldo = suma_debe - suma_haber
-                elif '2101' <= cuenta.codigo <= '3102':
+                elif "2101" <= cuenta.codigo <= "3102":
                     saldo = suma_haber - suma_debe
-                elif '4101' <= cuenta.codigo <= '4112':
+                elif "4101" <= cuenta.codigo <= "4112":
                     saldo = suma_debe - suma_haber
-                elif '510101' <= cuenta.codigo <= '510202':
+                elif "510101" <= cuenta.codigo <= "510202":
                     saldo = suma_haber - suma_debe
 
                 ResumenCuentas.objects.update_or_create(
                     periodo=periodo_seleccionado,
                     cuenta=cuenta,
                     defaults={
-                        'debe_total': suma_debe,
-                        'haber_total': suma_haber,
-                        'saldo': saldo,
-                    }
+                        "debe_total": suma_debe,
+                        "haber_total": suma_haber,
+                        "saldo": saldo,
+                    },
                 )
     else:
         # Si no hay periodo seleccionado, establece los valores por defecto
         cuentas = cuentas.annotate(
-            suma_debe=Value(0, output_field=DecimalField()),  # Establece output_field como DecimalField
-            suma_haber=Value(0, output_field=DecimalField())  # Establece output_field como DecimalField
+            suma_debe=Value(
+                0, output_field=DecimalField()
+            ),  # Establece output_field como DecimalField
+            suma_haber=Value(
+                0, output_field=DecimalField()
+            ),  # Establece output_field como DecimalField
         )
     # Lógica para manejar solicitudes GET
     periodos = Periodo.objects.all()
@@ -569,109 +743,147 @@ def actualizar_resumen_cuentas(request, periodo_id=None):
         periodo_seleccionado = get_object_or_404(Periodo, pk=periodo_id)
 
     consulta = Cuenta.objects.filter(
-        resumen_cuentas__isnull=False,
-        resumen_cuentas__periodo=periodo_seleccionado
+        resumen_cuentas__isnull=False, resumen_cuentas__periodo=periodo_seleccionado
     ).values(
-        'codigo', 'nombre', 'resumen_cuentas__debe_total',
-        'resumen_cuentas__haber_total', 'resumen_cuentas__saldo'
+        "codigo",
+        "nombre",
+        "resumen_cuentas__debe_total",
+        "resumen_cuentas__haber_total",
+        "resumen_cuentas__saldo",
     )
 
     resultados = consulta.all()
 
-    suma_debe_total = ResumenCuentas.objects.filter(
-        periodo=periodo_seleccionado
-    ).aggregate(Sum('debe_total'))['debe_total__sum'] or 0
+    suma_debe_total = (
+        ResumenCuentas.objects.filter(periodo=periodo_seleccionado).aggregate(
+            Sum("debe_total")
+        )["debe_total__sum"]
+        or 0
+    )
 
-    suma_haber_total = ResumenCuentas.objects.filter(
-        periodo=periodo_seleccionado
-    ).aggregate(Sum('haber_total'))['haber_total__sum'] or 0
+    suma_haber_total = (
+        ResumenCuentas.objects.filter(periodo=periodo_seleccionado).aggregate(
+            Sum("haber_total")
+        )["haber_total__sum"]
+        or 0
+    )
 
-    suma_debe = Transaccion.objects.filter(
-        periodo=periodo_seleccionado
-    ).aggregate(Sum('movimiento_debe'))['movimiento_debe__sum'] or 0
+    suma_debe = (
+        Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(
+            Sum("movimiento_debe")
+        )["movimiento_debe__sum"]
+        or 0
+    )
 
-    suma_haber = Transaccion.objects.filter(
-        periodo=periodo_seleccionado
-    ).aggregate(Sum('movimiento_haber'))['movimiento_haber__sum'] or 0
+    suma_haber = (
+        Transaccion.objects.filter(periodo=periodo_seleccionado).aggregate(
+            Sum("movimiento_haber")
+        )["movimiento_haber__sum"]
+        or 0
+    )
 
-    cuentas = cuentas.order_by('codigo')
-    transacciones = Transaccion.objects.filter(
-        periodo=periodo_seleccionado
-    ).order_by('fecha')
+    cuentas = cuentas.order_by("codigo")
+    transacciones = Transaccion.objects.filter(periodo=periodo_seleccionado).order_by(
+        "fecha"
+    )
 
-    return render(request, 'transacciones/transacciones.html', {
-        'resultados': resultados,
-        'periodos': periodos,
-        'periodo_seleccionado': periodo_seleccionado,
-        'transacciones': transacciones,
-        'suma_debe': suma_debe,
-        'suma_haber': suma_haber,
-        'cuentas': cuentas,
-        'suma_debe_total': suma_debe_total,
-        'suma_haber_total': suma_haber_total,
-    })
+    return render(
+        request,
+        "transacciones/transacciones.html",
+        {
+            "resultados": resultados,
+            "periodos": periodos,
+            "periodo_seleccionado": periodo_seleccionado,
+            "transacciones": transacciones,
+            "suma_debe": suma_debe,
+            "suma_haber": suma_haber,
+            "cuentas": cuentas,
+            "suma_debe_total": suma_debe_total,
+            "suma_haber_total": suma_haber_total,
+        },
+    )
 
 
 def agregar_empleado(request):
     if request.method == "POST":
-        nombre=request.POST.get('nombre')
-        puesto=request.POST.get('puesto')
-        salario=float(request.POST.get('salario'))
-        
-        pago_diario=salario
-        septimo=salario*7
-        vacaciones=((15*salario)+0.3*(15*salario))/52
-        salario_cancelado=septimo + vacaciones
-        aguinaldo=(15*salario)/52
-        ISS=salario_cancelado*0.075
-        AFP=salario_cancelado*0.0875
-        INSAFORP=salario*0.01
-        costo_real=septimo+vacaciones+aguinaldo+ISS+AFP+INSAFORP
+        nombre = request.POST.get("nombre")
+        puesto = request.POST.get("puesto")
+        salario = float(request.POST.get("salario"))
+
+        pago_diario = salario
+        septimo = salario * 7
+        vacaciones = ((15 * salario) + 0.3 * (15 * salario)) / 52
+        salario_cancelado = septimo + vacaciones
+        aguinaldo = (15 * salario) / 52
+        ISS = salario_cancelado * 0.075
+        AFP = salario_cancelado * 0.0875
+        INSAFORP = salario * 0.01
+        costo_real = septimo + vacaciones + aguinaldo + ISS + AFP + INSAFORP
 
         # Cálculos y creación del nuevo empleado
-        nuevo_empleado = ManoDeObra(nombre_empleado=nombre, puesto_trabajo=puesto, pago_diario=pago_diario, septimo_dia=septimo,
-                                    vacaciones=vacaciones, salario_cancelado=salario_cancelado, aguinaldo=aguinaldo,
-                                    iss=ISS, afp=AFP, insaforp=INSAFORP, costo_real=costo_real)
+        nuevo_empleado = ManoDeObra(
+            nombre_empleado=nombre,
+            puesto_trabajo=puesto,
+            pago_diario=pago_diario,
+            septimo_dia=septimo,
+            vacaciones=vacaciones,
+            salario_cancelado=salario_cancelado,
+            aguinaldo=aguinaldo,
+            iss=ISS,
+            afp=AFP,
+            insaforp=INSAFORP,
+            costo_real=costo_real,
+        )
         nuevo_empleado.save()
 
     # Recalcula las sumas totales después de agregar el empleado
-    suma_pago_diario = ManoDeObra.objects.aggregate(Sum('pago_diario'))['pago_diario__sum']
-    suma_septimo_dia = ManoDeObra.objects.aggregate(Sum('septimo_dia'))['septimo_dia__sum']
-    suma_vacaciones = ManoDeObra.objects.aggregate(Sum('vacaciones'))['vacaciones__sum']
-    suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum('salario_cancelado'))['salario_cancelado__sum']
-    suma_aguinaldo = ManoDeObra.objects.aggregate(Sum('aguinaldo'))['aguinaldo__sum']
-    suma_iss = ManoDeObra.objects.aggregate(Sum('iss'))['iss__sum']
-    suma_afp = ManoDeObra.objects.aggregate(Sum('afp'))['afp__sum']
-    suma_insaforp = ManoDeObra.objects.aggregate(Sum('insaforp'))['insaforp__sum']
-    suma_costo_real = ManoDeObra.objects.aggregate(Sum('costo_real'))['costo_real__sum']
+    suma_pago_diario = ManoDeObra.objects.aggregate(Sum("pago_diario"))[
+        "pago_diario__sum"
+    ]
+    suma_septimo_dia = ManoDeObra.objects.aggregate(Sum("septimo_dia"))[
+        "septimo_dia__sum"
+    ]
+    suma_vacaciones = ManoDeObra.objects.aggregate(Sum("vacaciones"))["vacaciones__sum"]
+    suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum("salario_cancelado"))[
+        "salario_cancelado__sum"
+    ]
+    suma_aguinaldo = ManoDeObra.objects.aggregate(Sum("aguinaldo"))["aguinaldo__sum"]
+    suma_iss = ManoDeObra.objects.aggregate(Sum("iss"))["iss__sum"]
+    suma_afp = ManoDeObra.objects.aggregate(Sum("afp"))["afp__sum"]
+    suma_insaforp = ManoDeObra.objects.aggregate(Sum("insaforp"))["insaforp__sum"]
+    suma_costo_real = ManoDeObra.objects.aggregate(Sum("costo_real"))["costo_real__sum"]
     total = suma_costo_real
 
     registros = ManoDeObra.objects.all()
     periodos = Periodo.objects.all()
 
+    return render(
+        request,
+        "controlcostos/manoobra.html",
+        {
+            "registros": registros,
+            "suma_pago_diario": suma_pago_diario,
+            "suma_septimo_dia": suma_septimo_dia,
+            "suma_vacaciones": suma_vacaciones,
+            "suma_salario_cancelado": suma_salario_cancelado,
+            "suma_aguinaldo": suma_aguinaldo,
+            "suma_iss": suma_iss,
+            "suma_afp": suma_afp,
+            "suma_insaforp": suma_insaforp,
+            "suma_costo_real": suma_costo_real,
+            "periodos": periodos,
+        },
+    )
 
-    return render(request, 'controlcostos/manoobra.html', {
-        'registros': registros,
-        'suma_pago_diario': suma_pago_diario,
-        'suma_septimo_dia': suma_septimo_dia,
-        'suma_vacaciones': suma_vacaciones,
-        'suma_salario_cancelado': suma_salario_cancelado,
-        'suma_aguinaldo': suma_aguinaldo,
-        'suma_iss': suma_iss,
-        'suma_afp': suma_afp,
-        'suma_insaforp': suma_insaforp,
-        'suma_costo_real': suma_costo_real,
-        'periodos':periodos
-    })
 
 def modificar_empleado(request, empleado_id):
     empleado = get_object_or_404(ManoDeObra, pk=empleado_id)
 
     if request.method == "POST":
         # Obtén los datos actualizados de la solicitud POST
-        nombre = request.POST.get('nombre')
-        puesto = request.POST.get('puesto')
-        salario = float(request.POST.get('salario'))
+        nombre = request.POST.get("nombre")
+        puesto = request.POST.get("puesto")
+        salario = float(request.POST.get("salario"))
         # Realiza los cálculos necesarios
         pago_diario = salario
         septimo = salario * 7
@@ -697,15 +909,27 @@ def modificar_empleado(request, empleado_id):
         empleado.costo_real = costo_real
 
         # Recalcula las sumas totales después de modificar el empleado
-        suma_pago_diario = ManoDeObra.objects.aggregate(Sum('pago_diario'))['pago_diario__sum']
-        suma_septimo_dia = ManoDeObra.objects.aggregate(Sum('septimo_dia'))['septimo_dia__sum']
-        suma_vacaciones = ManoDeObra.objects.aggregate(Sum('vacaciones'))['vacaciones__sum']
-        suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum('salario_cancelado'))['salario_cancelado__sum']
-        suma_aguinaldo = ManoDeObra.objects.aggregate(Sum('aguinaldo'))['aguinaldo__sum']
-        suma_iss = ManoDeObra.objects.aggregate(Sum('iss'))['iss__sum']
-        suma_afp = ManoDeObra.objects.aggregate(Sum('afp'))['afp__sum']
-        suma_insaforp = ManoDeObra.objects.aggregate(Sum('insaforp'))['insaforp__sum']
-        suma_costo_real = ManoDeObra.objects.aggregate(Sum('costo_real'))['costo_real__sum']
+        suma_pago_diario = ManoDeObra.objects.aggregate(Sum("pago_diario"))[
+            "pago_diario__sum"
+        ]
+        suma_septimo_dia = ManoDeObra.objects.aggregate(Sum("septimo_dia"))[
+            "septimo_dia__sum"
+        ]
+        suma_vacaciones = ManoDeObra.objects.aggregate(Sum("vacaciones"))[
+            "vacaciones__sum"
+        ]
+        suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum("salario_cancelado"))[
+            "salario_cancelado__sum"
+        ]
+        suma_aguinaldo = ManoDeObra.objects.aggregate(Sum("aguinaldo"))[
+            "aguinaldo__sum"
+        ]
+        suma_iss = ManoDeObra.objects.aggregate(Sum("iss"))["iss__sum"]
+        suma_afp = ManoDeObra.objects.aggregate(Sum("afp"))["afp__sum"]
+        suma_insaforp = ManoDeObra.objects.aggregate(Sum("insaforp"))["insaforp__sum"]
+        suma_costo_real = ManoDeObra.objects.aggregate(Sum("costo_real"))[
+            "costo_real__sum"
+        ]
         total = suma_costo_real
 
         empleado.save()
@@ -713,62 +937,80 @@ def modificar_empleado(request, empleado_id):
     registros = ManoDeObra.objects.all()
     periodos = Periodo.objects.all()
 
-    return redirect('/mano_de_obra_directa', {
-        'registros': registros,
-        'suma_pago_diario': suma_pago_diario,
-        'suma_septimo_dia': suma_septimo_dia,
-        'suma_vacaciones': suma_vacaciones,
-        'suma_salario_cancelado': suma_salario_cancelado,
-        'suma_aguinaldo': suma_aguinaldo,
-        'suma_iss': suma_iss,
-        'suma_afp': suma_afp,
-        'suma_insaforp': suma_insaforp,
-        'suma_costo_real': suma_costo_real,
-        'periodos':periodos
-    })
+    return redirect(
+        "/mano_de_obra_directa",
+        {
+            "registros": registros,
+            "suma_pago_diario": suma_pago_diario,
+            "suma_septimo_dia": suma_septimo_dia,
+            "suma_vacaciones": suma_vacaciones,
+            "suma_salario_cancelado": suma_salario_cancelado,
+            "suma_aguinaldo": suma_aguinaldo,
+            "suma_iss": suma_iss,
+            "suma_afp": suma_afp,
+            "suma_insaforp": suma_insaforp,
+            "suma_costo_real": suma_costo_real,
+            "periodos": periodos,
+        },
+    )
+
 
 def eliminar_empleado(request, empleado_id):
     empleado = get_object_or_404(ManoDeObra, pk=empleado_id)
     empleado.delete()
 
     # Recalcula las sumas totales después de eliminar el empleado
-    suma_pago_diario = ManoDeObra.objects.aggregate(Sum('pago_diario'))['pago_diario__sum']
-    suma_septimo_dia = ManoDeObra.objects.aggregate(Sum('septimo_dia'))['septimo_dia__sum']
-    suma_vacaciones = ManoDeObra.objects.aggregate(Sum('vacaciones'))['vacaciones__sum']
-    suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum('salario_cancelado'))['salario_cancelado__sum']
-    suma_aguinaldo = ManoDeObra.objects.aggregate(Sum('aguinaldo'))['aguinaldo__sum']
-    suma_iss = ManoDeObra.objects.aggregate(Sum('iss'))['iss__sum']
-    suma_afp = ManoDeObra.objects.aggregate(Sum('afp'))['afp__sum']
-    suma_insaforp = ManoDeObra.objects.aggregate(Sum('insaforp'))['insaforp__sum']
-    suma_costo_real = ManoDeObra.objects.aggregate(Sum('costo_real'))['costo_real__sum']
+    suma_pago_diario = ManoDeObra.objects.aggregate(Sum("pago_diario"))[
+        "pago_diario__sum"
+    ]
+    suma_septimo_dia = ManoDeObra.objects.aggregate(Sum("septimo_dia"))[
+        "septimo_dia__sum"
+    ]
+    suma_vacaciones = ManoDeObra.objects.aggregate(Sum("vacaciones"))["vacaciones__sum"]
+    suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum("salario_cancelado"))[
+        "salario_cancelado__sum"
+    ]
+    suma_aguinaldo = ManoDeObra.objects.aggregate(Sum("aguinaldo"))["aguinaldo__sum"]
+    suma_iss = ManoDeObra.objects.aggregate(Sum("iss"))["iss__sum"]
+    suma_afp = ManoDeObra.objects.aggregate(Sum("afp"))["afp__sum"]
+    suma_insaforp = ManoDeObra.objects.aggregate(Sum("insaforp"))["insaforp__sum"]
+    suma_costo_real = ManoDeObra.objects.aggregate(Sum("costo_real"))["costo_real__sum"]
     total = suma_costo_real
 
     registros = ManoDeObra.objects.all()
     periodos = Periodo.objects.all()
 
-    return redirect('/mano_de_obra_directa', {
-        'registros': registros,
-        'suma_pago_diario': suma_pago_diario,
-        'suma_septimo_dia': suma_septimo_dia,
-        'suma_vacaciones': suma_vacaciones,
-        'suma_salario_cancelado': suma_salario_cancelado,
-        'suma_aguinaldo': suma_aguinaldo,
-        'suma_iss': suma_iss,
-        'suma_afp': suma_afp,
-        'suma_insaforp': suma_insaforp,
-        'suma_costo_real': suma_costo_real,
-        'periodos':periodos
-    })
+    return redirect(
+        "/mano_de_obra_directa",
+        {
+            "registros": registros,
+            "suma_pago_diario": suma_pago_diario,
+            "suma_septimo_dia": suma_septimo_dia,
+            "suma_vacaciones": suma_vacaciones,
+            "suma_salario_cancelado": suma_salario_cancelado,
+            "suma_aguinaldo": suma_aguinaldo,
+            "suma_iss": suma_iss,
+            "suma_afp": suma_afp,
+            "suma_insaforp": suma_insaforp,
+            "suma_costo_real": suma_costo_real,
+            "periodos": periodos,
+        },
+    )
+
 
 def agregar_a_partida_doble(request):
     if request.method == "POST":
-        fecha = request.POST.get('fecha')
-        periodo = request.POST.get('periodo')
-    
-        suma_pago_diario = ManoDeObra.objects.aggregate(Sum('pago_diario'))['pago_diario__sum']
-        suma_septimo_dia = ManoDeObra.objects.aggregate(Sum('septimo_dia'))['septimo_dia__sum']
-        cuenta = Cuenta.objects.get(codigo='4103')
-        descripcion = 'Mano de obra directa'
+        fecha = request.POST.get("fecha")
+        periodo = request.POST.get("periodo")
+
+        suma_pago_diario = ManoDeObra.objects.aggregate(Sum("pago_diario"))[
+            "pago_diario__sum"
+        ]
+        suma_septimo_dia = ManoDeObra.objects.aggregate(Sum("septimo_dia"))[
+            "septimo_dia__sum"
+        ]
+        cuenta = Cuenta.objects.get(codigo="4103")
+        descripcion = "Mano de obra directa"
         movimiento_debe = suma_septimo_dia
         movimiento_haber = 0
         periodo_id = periodo
@@ -778,13 +1020,15 @@ def agregar_a_partida_doble(request):
             descripcion=descripcion,
             movimiento_debe=movimiento_debe,
             movimiento_haber=movimiento_haber,
-            periodo_id = periodo_id
+            periodo_id=periodo_id,
         )
         nueva_transaccion.save()
 
-        suma_vacaciones = ManoDeObra.objects.aggregate(Sum('vacaciones'))['vacaciones__sum']
-        cuenta = Cuenta.objects.get(codigo='4104')
-        descripcion = 'Mano de obra directa'
+        suma_vacaciones = ManoDeObra.objects.aggregate(Sum("vacaciones"))[
+            "vacaciones__sum"
+        ]
+        cuenta = Cuenta.objects.get(codigo="4104")
+        descripcion = "Mano de obra directa"
         movimiento_debe = suma_vacaciones
         movimiento_haber = 0
         periodo_id = periodo
@@ -794,15 +1038,19 @@ def agregar_a_partida_doble(request):
             descripcion=descripcion,
             movimiento_debe=movimiento_debe,
             movimiento_haber=movimiento_haber,
-            periodo_id = periodo_id
+            periodo_id=periodo_id,
         )
         nueva_transaccion.save()
 
-        suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum('salario_cancelado'))['salario_cancelado__sum']
+        suma_salario_cancelado = ManoDeObra.objects.aggregate(Sum("salario_cancelado"))[
+            "salario_cancelado__sum"
+        ]
 
-        suma_aguinaldo = ManoDeObra.objects.aggregate(Sum('aguinaldo'))['aguinaldo__sum']
-        cuenta = Cuenta.objects.get(codigo='4105')
-        descripcion = 'Mano de obra directa'
+        suma_aguinaldo = ManoDeObra.objects.aggregate(Sum("aguinaldo"))[
+            "aguinaldo__sum"
+        ]
+        cuenta = Cuenta.objects.get(codigo="4105")
+        descripcion = "Mano de obra directa"
         movimiento_debe = suma_aguinaldo
         movimiento_haber = 0
         periodo_id = periodo
@@ -812,13 +1060,13 @@ def agregar_a_partida_doble(request):
             descripcion=descripcion,
             movimiento_debe=movimiento_debe,
             movimiento_haber=movimiento_haber,
-            periodo_id = periodo_id
+            periodo_id=periodo_id,
         )
         nueva_transaccion.save()
 
-        suma_iss = ManoDeObra.objects.aggregate(Sum('iss'))['iss__sum']
-        cuenta = Cuenta.objects.get(codigo='4106')
-        descripcion = 'Mano de obra directa'
+        suma_iss = ManoDeObra.objects.aggregate(Sum("iss"))["iss__sum"]
+        cuenta = Cuenta.objects.get(codigo="4106")
+        descripcion = "Mano de obra directa"
         movimiento_debe = suma_iss
         movimiento_haber = 0
         periodo_id = periodo
@@ -828,13 +1076,13 @@ def agregar_a_partida_doble(request):
             descripcion=descripcion,
             movimiento_debe=movimiento_debe,
             movimiento_haber=movimiento_haber,
-            periodo_id = periodo_id
+            periodo_id=periodo_id,
         )
         nueva_transaccion.save()
 
-        suma_afp = ManoDeObra.objects.aggregate(Sum('afp'))['afp__sum']
-        cuenta = Cuenta.objects.get(codigo='4107')
-        descripcion = 'Mano de obra directa'
+        suma_afp = ManoDeObra.objects.aggregate(Sum("afp"))["afp__sum"]
+        cuenta = Cuenta.objects.get(codigo="4107")
+        descripcion = "Mano de obra directa"
         movimiento_debe = suma_afp
         movimiento_haber = 0
         periodo_id = periodo
@@ -844,13 +1092,13 @@ def agregar_a_partida_doble(request):
             descripcion=descripcion,
             movimiento_debe=movimiento_debe,
             movimiento_haber=movimiento_haber,
-            periodo_id = periodo_id
+            periodo_id=periodo_id,
         )
         nueva_transaccion.save()
 
-        suma_insaforp = ManoDeObra.objects.aggregate(Sum('insaforp'))['insaforp__sum']
-        cuenta = Cuenta.objects.get(codigo='4108')
-        descripcion = 'Mano de obra directa'
+        suma_insaforp = ManoDeObra.objects.aggregate(Sum("insaforp"))["insaforp__sum"]
+        cuenta = Cuenta.objects.get(codigo="4108")
+        descripcion = "Mano de obra directa"
         movimiento_debe = suma_insaforp
         movimiento_haber = 0
         periodo_id = periodo
@@ -860,13 +1108,15 @@ def agregar_a_partida_doble(request):
             descripcion=descripcion,
             movimiento_debe=movimiento_debe,
             movimiento_haber=movimiento_haber,
-            periodo_id = periodo_id
+            periodo_id=periodo_id,
         )
         nueva_transaccion.save()
 
-        suma_costo_real = ManoDeObra.objects.aggregate(Sum('costo_real'))['costo_real__sum']
-        cuenta = Cuenta.objects.get(codigo='110101')
-        descripcion = 'Mano de obra directa'
+        suma_costo_real = ManoDeObra.objects.aggregate(Sum("costo_real"))[
+            "costo_real__sum"
+        ]
+        cuenta = Cuenta.objects.get(codigo="110101")
+        descripcion = "Mano de obra directa"
         movimiento_debe = 0
         movimiento_haber = suma_costo_real
         periodo_id = periodo
@@ -876,18 +1126,205 @@ def agregar_a_partida_doble(request):
             descripcion=descripcion,
             movimiento_debe=movimiento_debe,
             movimiento_haber=movimiento_haber,
-            periodo_id = periodo_id
+            periodo_id=periodo_id,
         )
         nueva_transaccion.save()
 
         total = suma_costo_real
-    return redirect('/mano_de_obra_directa')
+    return redirect("/mano_de_obra_directa")
 
-def ver_balance_general_de_periodo(request,id_periodo):
-    periodo = get_object_or_404(Periodo, pk=id_periodo)
 
-    # obtener todas las cuentas
-    cuentas = Cuenta.objects.all()
+def ver_balance_general_de_periodo(request):
+    codigo_periodo = 1
+    if request.method == "POST":
+        codigo_periodo = request.POST.get("periodo")
+    # obtiene todas las cuentas de activo
+    cuentas_activo = Cuenta.objects.filter(codigo__startswith="1")
+    # obtiene todas las cuentas de pasivo
+    cuentas_pasivo = Cuenta.objects.filter(codigo__startswith="2")
+    # obtiene todas las cuentas de capital
+    cuentas_capital = Cuenta.objects.filter(codigo__startswith="3")
 
-    # si hay un periodo seleccionado, realizar los calculos
-    resumenDeCuentas = ResumenCuentas.objects.filter(periodo=periodo).order_by('cuenta__codigo')
+    array_cuentas_activo = []
+    array_cuentas_pasivo = []
+    array_cuentas_capital = []
+    # obtiene el periodo seleccionado
+    periodo = Periodo.objects.get(codigo=codigo_periodo)
+
+    # por cada cuenta de activo, obtiene el saldo de la cuenta en el periodo seleccionado
+    for cuenta in cuentas_activo:
+            transacciones = Transaccion.objects.filter(codigo=cuenta, periodo=periodo)
+            if(transacciones):
+                suma_debe = transacciones.aggregate(Sum("movimiento_debe"))["movimiento_debe__sum"] or Decimal(0)
+                suma_haberes = transacciones.aggregate(Sum("movimiento_haber"))["movimiento_haber__sum"] or Decimal(0)
+                saldo = suma_debe - suma_haberes
+                nueva_cuenta = {
+                    "codigo": cuenta.codigo,
+                    "nombre": cuenta.nombre,
+                    "saldo": saldo,
+                    "debe_total": suma_debe,
+                    "haber_total": suma_haberes,
+                }
+
+                array_cuentas_activo.append(nueva_cuenta)
+
+    # por cada cuenta de pasivo, obtiene el saldo de la cuenta en el periodo seleccionado
+    for cuenta in cuentas_pasivo:
+        transacciones = Transaccion.objects.filter(codigo=cuenta, periodo=periodo)
+        if(transacciones):
+            suma_debe = transacciones.aggregate(Sum("movimiento_debe"))["movimiento_debe__sum"] or Decimal(0)
+            suma_haberes = transacciones.aggregate(Sum("movimiento_haber"))["movimiento_haber__sum"] or Decimal(0)
+            saldo = suma_haberes - suma_debe
+            nueva_cuenta = {
+                "codigo": cuenta.codigo,
+                "nombre": cuenta.nombre,
+                "saldo": saldo,
+                "debe_total": suma_debe,
+                "haber_total": suma_haberes,
+            }
+            array_cuentas_pasivo.append(nueva_cuenta)
+
+    # por cada cuenta de capital, obtiene el saldo de la cuenta en el periodo seleccionado
+    for cuenta in cuentas_capital:
+        transacciones = Transaccion.objects.filter(codigo=cuenta, periodo=periodo)
+        if(transacciones):
+            suma_debe = transacciones.aggregate(Sum("movimiento_debe"))["movimiento_debe__sum"] or Decimal(0)
+            suma_haberes = transacciones.aggregate(Sum("movimiento_haber"))["movimiento_haber__sum"] or Decimal(0)
+            saldo = suma_haberes - suma_debe
+            nueva_cuenta = {
+                "codigo": cuenta.codigo,
+                "nombre": cuenta.nombre,
+                "saldo": saldo,
+                "debe_total": suma_debe,
+                "haber_total": suma_haberes,
+            }
+            array_cuentas_capital.append(nueva_cuenta)
+
+    # obtiene el saldo total de activo
+    totales_saldos_activos = {
+        "total_haberes": 0,
+        "total_debe": 0,
+        "total_saldo": 0,
+    }
+    for cuenta in array_cuentas_activo:
+        # total haberes 
+        totales_saldos_activos['total_haberes'] += cuenta['haber_total']
+        # total debe
+        totales_saldos_activos['total_debe'] += cuenta['debe_total']
+        # total saldo
+        totales_saldos_activos['total_saldo'] += cuenta['saldo']
+        
+
+    # obtiene el saldo total de pasivo
+    totales_saldos_pasivos = {
+        "total_haberes": 0,
+        "total_debe": 0,
+        "total_saldo": 0,
+    }
+
+
+    for cuenta in array_cuentas_pasivo:
+        totales_saldos_pasivos['total_haberes'] += cuenta['haber_total']
+        totales_saldos_pasivos['total_debe'] += cuenta['debe_total']
+        totales_saldos_pasivos['total_saldo'] += cuenta['saldo']
+
+    # obtiene el saldo total de capital
+    totales_saldos_capital = {
+        "total_haberes": 0,
+        "total_debe": 0,
+        "total_saldo": 0,
+    }
+
+    for cuenta in array_cuentas_capital:
+        totales_saldos_capital['total_haberes'] += cuenta['haber_total']
+        totales_saldos_capital['total_debe'] += cuenta['debe_total']
+        totales_saldos_capital['total_saldo'] += cuenta['saldo']
+
+    # obtiene el saldo total de pasivo y capital
+    total_saldo_pasivo_capital = totales_saldos_pasivos['total_saldo'] + totales_saldos_capital['total_saldo']
+
+    # Retorna la vista con los datos
+    return render(
+        request,
+        "estadosfinancieros/general.html",
+        {
+            "cuentas_activo": array_cuentas_activo,
+            "cuentas_pasivo": array_cuentas_pasivo,
+            "cuentas_capital": array_cuentas_capital,
+            "total_saldo_pasivo_capital": total_saldo_pasivo_capital,
+            "periodos": Periodo.objects.all(),
+            "totales_saldos_activos": totales_saldos_activos,
+            "totales_saldos_pasivos": totales_saldos_pasivos,
+            "totales_saldos_capital": totales_saldos_capital,
+        },
+    )
+
+def ver_estado_de_capital_de_periodo(request):
+    # Capital Inicial: Esta es la cuenta que refleja el capital con el que comenzó la empresa al inicio del período contable. Para tu caso, puedes tomar la cuenta "Caja" o "Bancos" como el Capital Inicial y registrar el saldo de esa cuenta al inicio del período. Por ejemplo, si el saldo de "Caja" al inicio del período es $10,000, entonces ese es tu Capital Inicial.
+
+    # Utilidad del Ejercicio: Debes calcular la utilidad neta o pérdida neta durante el período. Para hacerlo, necesitas restar los gastos (cuentas de la serie 4 y 5) de los ingresos (cuentas de la serie 1 y 2), y sumar o restar otros ingresos y gastos según corresponda. El resultado es la "Utilidad del Ejercicio" o la "Pérdida del Ejercicio."
+
+    # Por ejemplo, supongamos que tus ingresos totales fueron $50,000 y tus gastos totales fueron $35,000, entonces la Utilidad del Ejercicio sería:
+
+    # Utilidad del Ejercicio = Ingresos - Gastos
+    # Utilidad del Ejercicio = $50,000 - $35,000
+    # Utilidad del Ejercicio = $15,000
+
+    # Capital Final: Para calcular el "Capital Final," debes sumar el "Capital Inicial" y la "Utilidad del Ejercicio" (o restar la "Pérdida del Ejercicio" si es negativa). Siguiendo el ejemplo anterior:
+
+    # Capital Final = Capital Inicial + Utilidad del Ejercicio
+    # Capital Final = $10,000 + $15,000
+    # Capital Final = $25,000
+
+    # periodo seleccionado
+    codigo_periodo = 1
+    if request.method == "POST":
+        codigo_periodo = request.POST.get("periodo")
+    
+    # capital inicial
+    capital_inicial = 0
+    cuenta_caja = Cuenta.objects.get(codigo="110101")
+    cuenta_bancos = Cuenta.objects.get(codigo="110102")
+
+    capital_inicial += Transaccion.objects.filter(codigo=cuenta_caja, periodo=codigo_periodo).aggregate(Sum("movimiento_debe"))["movimiento_debe__sum"] or Decimal(0)
+    capital_inicial += Transaccion.objects.filter(codigo=cuenta_bancos, periodo=codigo_periodo).aggregate(Sum("movimiento_debe"))["movimiento_debe__sum"] or Decimal(0)
+
+    # utilidad del ejercicio
+    utilidad_ejercicio = 0
+    # ingresos
+    cuenta_ingresos = Cuenta.objects.filter(codigo__startswith="1")
+    for cuenta in cuenta_ingresos:
+        ingresos = Transaccion.objects.filter(codigo=cuenta, periodo=codigo_periodo).aggregate(Sum("movimiento_haber"))["movimiento_haber__sum"] or Decimal(0)
+    # gastos
+    cuenta_gastos = Cuenta.objects.filter(codigo__startswith="4")
+    for cuenta in cuenta_gastos:
+        gastos = Transaccion.objects.filter(codigo=cuenta, periodo=codigo_periodo).aggregate(Sum("movimiento_debe"))["movimiento_debe__sum"] or Decimal(0)
+    # otros ingresos
+    cuenta_otros_ingresos = Cuenta.objects.filter(codigo__startswith="2")
+    for cuenta in cuenta_otros_ingresos:
+        otros_ingresos = Transaccion.objects.filter(codigo=cuenta, periodo=codigo_periodo).aggregate(Sum("movimiento_haber"))["movimiento_haber__sum"] or Decimal(0)
+    # otros gastos
+    cuenta_otros_gastos = Cuenta.objects.filter(codigo__startswith="5")
+    for cuenta in cuenta_otros_gastos:
+        otros_gastos = Transaccion.objects.filter(codigo=cuenta, periodo=codigo_periodo).aggregate(Sum("movimiento_debe"))["movimiento_debe__sum"] or Decimal(0)
+
+    # capital final
+    utilidad_ejercicio = ingresos - gastos + otros_ingresos - otros_gastos
+    capital_final = capital_inicial + utilidad_ejercicio
+
+    
+
+    return render(
+        request,
+        "estadosfinancieros/capital.html",
+        {
+            "capital_inicial": capital_inicial,
+            "utilidad_ejercicio": utilidad_ejercicio,
+            "capital_final": capital_final,
+            "periodos": Periodo.objects.all(),
+            "ingresos": ingresos,
+            "gastos": gastos,
+            "otros_ingresos": otros_ingresos,
+            "otros_gastos": otros_gastos,
+        },
+    )

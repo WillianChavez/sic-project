@@ -41,5 +41,6 @@ urlpatterns = [
     path('eliminar_empleado/<int:empleado_id>/', views.eliminar_empleado, name='eliminar_empleado'),
     path('agregar_a_partida_doble', views.agregar_a_partida_doble, name='agregar_a_partida_doble'),
 
-    path('ver_balance_general_de_periodo/<int:id_periodo>/', views.ver_balance_general_de_periodo, name='ver_balance_general_de_periodo'),
+    path('ver_balance_general_de_periodo', views.ver_balance_general_de_periodo, name='ver_balance_general_de_periodo'),
+    path('ver_estado_de_capital_de_periodo', views.ver_estado_de_capital_de_periodo, name='ver_estado_de_capital_de_periodo'),
 ]

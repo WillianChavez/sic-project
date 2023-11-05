@@ -5,7 +5,7 @@ services:
     container_name: app
     build:
       context: .
-      dockerfile: ./.Docker/Dockerfile
+      dockerfile: ./.docker/Dockerfile
     networks:
       - sic-net
     volumes:
@@ -21,14 +21,16 @@ services:
     image: mysql:8
     restart: always
     environment:
+      MYSQL_ROOT_PASSWORD: 'root'
       MYSQL_DATABASE: 'sic'
       MYSQL_PASSWORD: 'root'
       MYSQL_USER: 'root'
+      
 
     ports:
       - '3307:3306'
     volumes:
-      - ./.Docker/mysql:/var/lib/mysql
+      - ./.docker/mysql:/var/lib/mysql
     networks:
       - sic-net
   phpmyadmin:
