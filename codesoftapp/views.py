@@ -1275,6 +1275,8 @@ def ver_estado_de_capital_de_periodo(request):
     cuenta_ingresos = Cuenta.objects.filter(codigo__startswith="1")
     for cuenta in cuenta_ingresos:
         ingresos += Transaccion.objects.filter(codigo=cuenta, periodo=codigo_periodo).aggregate(Sum("movimiento_debe"))["movimiento_debe__sum"] or Decimal(0)
+
+    ingresos -= capital_inicial
     # gastos
     cuenta_gastos = Cuenta.objects.filter(codigo__startswith="4")
     for cuenta in cuenta_gastos:
